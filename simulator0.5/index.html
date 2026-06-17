@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社会理论人生模拟器</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --card: rgba(255,255,255,0.04);
+    --card-hover: rgba(255,255,255,0.08);
+    --text: #e8e6e3;
+    --text-dim: #8a8680;
+    --accent: #c9a96e;
+    --marx: #d44;
+    --bourdieu: #4a7c59;
+    --goffman: #7b5ea7;
+    --parsons: #c49a3c;
+    --foucault: #5a8a9a;
+    --giddens: #b85c38;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .screen { display: none; min-height: 100vh; padding: 2rem; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* ===== Welcome ===== */
+  #welcome {
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 30%, rgba(201,169,110,0.08) 0%, transparent 60%);
+  }
+  #welcome h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #e8e6e3, #c9a96e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #welcome .subtitle {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+  }
+  #welcome .subtitle em {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.85rem 2.5rem;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 1rem;
+    font-family: 'Noto Sans SC', sans-serif;
+    background: transparent;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.3s;
+    border-radius: 2px;
+  }
+  .btn:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn:disabled:hover {
+    background: transparent;
+    color: var(--accent);
+  }
+
+  /* ===== Theory Selection ===== */
+  #theory-select {
+    background: radial-gradient(ellipse at 50% 20%, rgba(201,169,110,0.06) 0%, transparent 50%);
+  }
+  #theory-select h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.6rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  #theory-select .hint {
+    color: var(--text-dim);
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+  }
+  .theory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    max-width: 960px;
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+  .theory-card {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 1.4rem 1.6rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .theory-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    transition: width 0.3s;
+  }
+  .theory-card:hover {
+    background: var(--card-hover);
+    border-color: rgba(255,255,255,0.12);
+  }
+  .theory-card:hover::before { width: 6px; }
+  .theory-card.selected {
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.07);
+  }
+  .theory-card.selected::before { width: 6px; }
+
+  .theory-card[data-theory="marx"]::before { background: var(--marx); }
+  .theory-card[data-theory="bourdieu"]::before { background: var(--bourdieu); }
+  .theory-card[data-theory="goffman"]::before { background: var(--goffman); }
+  .theory-card[data-theory="parsons"]::before { background: var(--parsons); }
+  .theory-card[data-theory="foucault"]::before { background: var(--foucault); }
+  .theory-card[data-theory="giddens"]::before { background: var(--giddens); }
+
+  .theory-name {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  .theory-sub {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-bottom: 0.7rem;
+  }
+  .theory-desc {
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: rgba(232,230,227,0.7);
+  }
+  .theory-metrics {
+    margin-top: 0.8rem;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  /* ===== Character Creation ===== */
+  #char-create h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.08em;
+  }
+  .char-panel {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2rem;
+    max-width: 540px;
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+  .attr-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.2rem;
+  }
+  .attr-row label {
+    width: 80px;
+    font-size: 0.92rem;
+    color: var(--text-dim);
+  }
+  .attr-row input[type="range"] {
+    flex: 1;
+    margin: 0 1rem;
+    accent-color: var(--accent);
+  }
+  .attr-row .val {
+    width: 32px;
+    text-align: right;
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+  .attr-row select {
+    flex: 1;
+    margin: 0 1rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text);
+    padding: 0.4rem 0.6rem;
+    border-radius: 2px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .remaining {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ===== Simulation ===== */
+  #simulation {
+    padding: 2rem 1rem;
+    align-items: stretch;
+  }
+  .sim-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .sim-header .theory-label {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+  .sim-header .year-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .metrics-bar {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .metric {
+    text-align: center;
+    min-width: 90px;
+  }
+  .metric-name {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.05em;
+  }
+  .metric-bar-outer {
+    width: 80px; height: 5px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    margin: 0 auto 0.2rem;
+    overflow: hidden;
+  }
+  .metric-bar-inner {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s;
+  }
+  .metric-val {
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .metric-count {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+  .event-log {
+    max-width: 640px;
+    margin: 0 auto 1.5rem;
+    width: 100%;
+  }
+  .event-card {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 3px;
+    padding: 1rem 1.3rem;
+    margin-bottom: 0.8rem;
+    animation: fadeUp 0.5s ease;
+    position: relative;
+  }
+  .event-age {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 0.3rem;
+  }
+  .event-text {
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: rgba(232,230,227,0.88);
+  }
+  .event-text .keyword {
+    font-weight: 600;
+  }
+  .event-impact {
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+  .choice-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 3px;
+    padding: 1rem 1.3rem;
+    margin-top: 0.5rem;
+  }
+  .choice-box .choice-title {
+    font-size: 0.82rem;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  .choice-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text);
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 0.4rem;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.88rem;
+    transition: all 0.2s;
+  }
+  .choice-btn:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.15);
+  }
+  .sim-controls {
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== Summary ===== */
+  #summary {
+    background: radial-gradient(ellipse at 50% 30%, rgba(201,169,110,0.06) 0%, transparent 50%);
+  }
+  #summary h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+  }
+  .summary-life {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 2rem;
+  }
+  .diagnosis {
+    max-width: 640px;
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    width: 100%;
+  }
+  .diagnosis h3 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    letter-spacing: 0.08em;
+  }
+  .diagnosis p {
+    font-size: 0.92rem;
+    line-height: 1.8;
+    color: rgba(232,230,227,0.82);
+    margin-bottom: 0.8rem;
+  }
+  .final-metrics {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  .final-metric {
+    text-align: center;
+  }
+  .final-metric .num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: 'Noto Serif SC', serif;
+  }
+  .final-metric .label {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-top: 0.2rem;
+  }
+  .timeline {
+    max-width: 640px;
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+  .timeline-item {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.84rem;
+  }
+  .timeline-age {
+    color: var(--text-dim);
+    min-width: 40px;
+    text-align: right;
+  }
+  .timeline-event {
+    color: rgba(232,230,227,0.72);
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    .theory-grid { grid-template-columns: 1fr; }
+    .metrics-bar { gap: 0.6rem; }
+    .metric { min-width: 70px; }
+    .metric-bar-outer { width: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 欢迎界面 ===== -->
+<div id="welcome" class="screen active">
+  <h1>社会理论人生模拟器</h1>
+  <p class="subtitle">
+    同一段人生，在不同的理论透镜下呈现截然不同的命运。<br>
+    选择一位社会学家，<em>用他的眼睛活一遍</em>。<br>
+    你会发现：决定命运的，也许不是你活着的方式，而是谁在注视你。
+  </p>
+  <button class="btn" onclick="showScreen('theory-select')">翻开命运之书</button>
+</div>
+
+<!-- ===== 理论选择 ===== -->
+<div id="theory-select" class="screen">
+  <h2>选择你的理论透镜</h2>
+  <p class="hint">不同的理论框架将决定你看到怎样的人生</p>
+  <div class="theory-grid">
+    <div class="theory-card" data-theory="marx" onclick="selectTheory('marx')">
+      <div class="theory-name">卡尔·马克思</div>
+      <div class="theory-sub">历史唯物主义 · 阶级斗争</div>
+      <div class="theory-desc">一切社会的历史都是阶级斗争的历史。你的一生，将由你在生产关系中的位置来定义——剥削或被剥削，异化或觉醒。</div>
+      <div class="theory-metrics">核心指标：阶级意识 / 异化程度 / 物质条件</div>
+    </div>
+    <div class="theory-card" data-theory="bourdieu" onclick="selectTheory('bourdieu')">
+      <div class="theory-name">皮埃尔·布迪厄</div>
+      <div class="theory-sub">场域理论 · 资本转换 · 惯习</div>
+      <div class="theory-desc">社会是一张资本博弈的牌桌。经济资本、文化资本、社会资本与符号资本之间的微妙转换，将决定你是上位者还是区隔对象。</div>
+      <div class="theory-metrics">核心指标：经济资本 / 文化资本 / 社会资本 / 符号资本</div>
+    </div>
+    <div class="theory-card" data-theory="goffman" onclick="selectTheory('goffman')">
+      <div class="theory-name">欧文·戈夫曼</div>
+      <div class="theory-sub">拟剧论 · 印象管理 · 污名</div>
+      <div class="theory-desc">人生如戏，你我皆为台上演员。每一刻你都在管理他人对你的印象——前台表演、后台准备，以及那些你拼命想藏起来的污名。</div>
+      <div class="theory-metrics">核心指标：社会面子 / 污名压力 / 角色库</div>
+    </div>
+    <div class="theory-card" data-theory="parsons" onclick="selectTheory('parsons')">
+      <div class="theory-name">塔尔科特·帕森斯</div>
+      <div class="theory-sub">结构功能主义 · AGIL · 社会化</div>
+      <div class="theory-desc">社会是一个自我维系的功能系统。你的一生，就是被社会化的过程——内化规范、扮演角色、维持均衡。偏离？系统自有修正机制。</div>
+      <div class="theory-metrics">核心指标：系统整合 / 角色符合 / 价值内化</div>
+    </div>
+    <div class="theory-card" data-theory="foucault" onclick="selectTheory('foucault')">
+      <div class="theory-name">米歇尔·福柯</div>
+      <div class="theory-sub">权力/知识 · 规训 · 自我技术</div>
+      <div class="theory-desc">权力无处不在，不仅压迫你，更塑造你。从学校的铃声到医院病历，从自我审视到坦白欲望——你是被规训出来的主体，还是逃逸者？</div>
+      <div class="theory-metrics">核心指标：规训程度 / 抵抗意识 / 主体化</div>
+    </div>
+    <div class="theory-card" data-theory="giddens" onclick="selectTheory('giddens')">
+      <div class="theory-name">安东尼·吉登斯</div>
+      <div class="theory-sub">结构化理论 · 反思性 · 生活政治</div>
+      <div class="theory-desc">结构与行动不是对立的两极，而是同一枚硬币的两面。你被结构塑造，但你的每一次行动也在改写结构。反思性是你的武器。</div>
+      <div class="theory-metrics">核心指标：能动性 / 结构约束 / 反思性</div>
+    </div>
+  </div>
+  <button class="btn" id="btn-to-char" disabled onclick="showScreen('char-create')">确认选择</button>
+</div>
+
+<!-- ===== 角色创建 ===== -->
+<div id="char-create" class="screen">
+  <h2>设定初始条件</h2>
+  <div class="char-panel">
+    <div class="attr-row">
+      <label>出身阶层</label>
+      <select id="attr-class">
+        <option value="0">底层 · 城乡流动工人家庭</option>
+        <option value="1" selected>中层 · 城市普通白领家庭</option>
+        <option value="2">上层 · 体制内/商业精英家庭</option>
+      </select>
+    </div>
+    <div class="attr-row">
+      <label>智力</label>
+      <input type="range" id="attr-int" min="1" max="10" value="5">
+      <span class="val" id="val-int">5</span>
+    </div>
+    <div class="attr-row">
+      <label>颜值</label>
+      <input type="range" id="attr-look" min="1" max="10" value="5">
+      <span class="val" id="val-look">5</span>
+    </div>
+    <div class="attr-row">
+      <label>体质</label>
+      <input type="range" id="attr-health" min="1" max="10" value="5">
+      <span class="val" id="val-health">5</span>
+    </div>
+    <div class="attr-row">
+      <label>运气</label>
+      <input type="range" id="attr-luck" min="1" max="10" value="5">
+      <span class="val" id="val-luck">5</span>
+    </div>
+  </div>
+  <button class="btn" onclick="startSimulation()">开始人生</button>
+</div>
+
+<!-- ===== 模拟主界面 ===== -->
+<div id="simulation" class="screen">
+  <div class="sim-header">
+    <div class="theory-label" id="sim-theory"></div>
+    <div class="year-label" id="sim-year"></div>
+  </div>
+  <div class="metrics-bar" id="metrics-bar"></div>
+  <div class="event-log" id="event-log"></div>
+  <div class="sim-controls">
+    <button class="btn" id="btn-next" onclick="nextYear()">继续</button>
+    <button class="btn hidden" id="btn-summary" onclick="showSummary()" style="margin-left:1rem;">查看一生总结</button>
+  </div>
+</div>
+
+<!-- ===== 人生总结 ===== -->
+<div id="summary" class="screen">
+  <h2>一生回顾</h2>
+  <p class="summary-life" id="summary-life"></p>
+  <div class="final-metrics" id="final-metrics"></div>
+  <div class="diagnosis" id="diagnosis"></div>
+  <div class="timeline" id="timeline"></div>
+  <button class="btn" onclick="restart()">换一种理论，再来一次</button>
+</div>
+
+<script>
+// ===== 全局状态 =====
+let state = {
+  theory: null,
+  age: 0,
+  alive: true,
+  attrs: {},
+  metrics: {},
+  events: [],
+  log: [],
+  deathAge: 0,
+  deathReason: '',
+  pendingChoice: null
+};
+
+// ===== 理论配置 =====
+const THEORIES = {
+  marx: {
+    name: '卡尔·马克思',
+    color: '#d44',
+    metricsDef: [
+      { key: 'classConsciousness', name: '阶级意识', init: 15 },
+      { key: 'alienation', name: '异化程度', init: 20 },
+      { key: 'materialCondition', name: '物质条件', init: 40 }
+    ],
+    events: {
+      early: [
+        { text: '你出生在一个{classDesc}家庭。父亲每天{fatherWork}，母亲{motherWork}。你尚不知这些日常将如何形塑你的阶级位置。',
+          tags: ['出生','阶级'],
+          effects: { classConsciousness: 0, alienation: 5, materialCondition: 0 }
+        },
+        { text: '邻居家的孩子穿着新衣去幼儿园，你穿着表哥的旧衣服。你第一次隐约感到一种说不清的差异。',
+          cond: (s) => s.attrs.cls === 0,
+          tags: ['差异','阶级'],
+          effects: { classConsciousness: 5, alienation: 3 }
+        },
+        { text: '家里请了保姆照顾你，周末去少年宫学钢琴。这些"自然"的安排，日后你才明白是阶级再生产的起点。',
+          cond: (s) => s.attrs.cls === 2,
+          tags: ['再生产','阶级'],
+          effects: { classConsciousness: -3, materialCondition: 10 }
+        },
+        { text: '你上的是厂区子弟小学，老师也是工人家属。教育的质量，从一开始就不平等。',
+          cond: (s) => s.attrs.cls === 0,
+          tags: ['教育','不平等'],
+          effects: { alienation: 5, materialCondition: -5 }
+        }
+      ],
+      school: [
+        { text: '课本上说"劳动最光荣"，但你注意到最辛苦的人过最苦的日子。一个微妙的裂痕在意识形态的幕布上出现了。',
+          tags: ['意识形态','觉醒'],
+          effects: { classConsciousness: 8, alienation: 5 }
+        },
+        { text: '你成绩不错，老师说你"将来一定有出息"。但你注意到，有出息的标准只有一个——离开你出身的阶级。',
+          cond: (s) => s.attrs.int >= 6,
+          tags: ['教育','流动'],
+          effects: { classConsciousness: 3, alienation: 4 }
+        },
+        { text: '学校组织参观工厂。流水线上的工人面无表情地重复同一动作。你感到一阵寒意——这会不会就是你的未来？',
+          tags: ['异化','劳动'],
+          effects: { alienation: 8, classConsciousness: 5 }
+        },
+        { text: '你的同学家里开了工厂，课间讨论的是"我家又招了多少工人"。你第一次意识到，"同学"并不等于"同类"。',
+          cond: (s) => s.attrs.cls <= 1,
+          tags: ['阶级差异'],
+          effects: { classConsciousness: 6 }
+        },
+        { text: '你读到了一本关于工人运动的书，虽然还看不太懂，但"剩余价值"这个词像一把钥匙，打开了你从未注意过的房间。',
+          cond: (s) => s.attrs.int >= 5,
+          tags: ['启蒙','阅读'],
+          effects: { classConsciousness: 10 }
+        }
+      ],
+      youth: [
+        { text: '高考结束了。你考上了一所不错的大学——但学费让家里喘不过气。教育这条上升通道，本身就是一种筛选机制。',
+          cond: (s) => s.attrs.int >= 6 && s.attrs.cls <= 1,
+          tags: ['教育','筛选'],
+          effects: { classConsciousness: 5, materialCondition: -10, alienation: 6 }
+        },
+        { text: '大学里你接触到马克思主义。不是课本上那种，而是一个活生生的分析工具。你开始用"阶级"这个词重新理解自己的一切。',
+          cond: (s) => s.attrs.int >= 4,
+          tags: ['觉醒','理论'],
+          effects: { classConsciousness: 15, alienation: -3 }
+        },
+        { text: '毕业了，你找到了一份工作。朝九晚六，格子间，KPI。你开始理解什么叫"劳动的异化"——不是在书本上，而是在自己的身体里。',
+          tags: ['异化','劳动'],
+          effects: { alienation: 12, materialCondition: 10, classConsciousness: 5 }
+        },
+        { text: '你选择了创业，做了小老板。雇佣了第一个人之后，你开始不安——你现在站在生产关系的哪一边？',
+          cond: (s) => s.attrs.luck >= 6,
+          choice: {
+            title: '你如何面对自己的阶级位置变化？',
+            options: [
+              { text: '这就是我一直追求的——向上走', effects: { classConsciousness: -10, materialCondition: 15, alienation: -5 } },
+              { text: '不安，但我别无选择', effects: { classConsciousness: 5, alienation: 8 } },
+              { text: '我试着做一个"不一样的老板"', effects: { classConsciousness: 8, materialCondition: 5, alienation: 3 } }
+            ]
+          }
+        }
+      ],
+      mid: [
+        { text: '公司裁员，你被"优化"了。HR的措辞温柔而精准——但本质上，你不过是资本循环中可以随时丢弃的可变资本。',
+          cond: (s) => s.attrs.luck <= 5,
+          tags: ['裁员','资本'],
+          effects: { materialCondition: -15, alienation: 10, classConsciousness: 8 }
+        },
+        { text: '你参加了工友维权行动。当你们站在一起的时候，你感到一种从未有过的力量——这不是个人问题，这是阶级问题。',
+          cond: (s) => s.metrics.classConsciousness >= 40,
+          tags: ['团结','行动'],
+          effects: { classConsciousness: 15, alienation: -8, materialCondition: -5 }
+        },
+        { text: '房贷、车贷、孩子的补习班——你被牢牢地绑在了消费主义的链条上。你感到窒息，但不敢停下。',
+          cond: (s) => s.metrics.materialCondition >= 40,
+          tags: ['消费主义','锁链'],
+          effects: { alienation: 10, materialCondition: -8 }
+        },
+        { text: '你升职了，成了中层管理。现在你既不是纯粹的劳动者，也不是资本家——你是一个矛盾的中间体。',
+          cond: (s) => s.attrs.int >= 6 && s.metrics.materialCondition >= 50,
+          tags: ['中间阶级','矛盾'],
+          effects: { materialCondition: 10, classConsciousness: -5, alienation: 5 }
+        },
+        { text: '深夜加班时你突然意识到：你已经很久没有为自己的需要而工作了。一切劳动都异化为维持生存的手段。',
+          cond: (s) => s.metrics.alienation >= 50,
+          tags: ['异化','觉醒'],
+          effects: { classConsciousness: 10, alienation: 5 }
+        }
+      ],
+      late: [
+        { text: '退休了。回首一生，你终于有时间思考——但思考能力本身，是不是也被这个系统塑造了？',
+          tags: ['反思','晚年'],
+          effects: { classConsciousness: 5 }
+        },
+        { text: '你把积蓄投了P2P，暴雷了。在维权群里，你遇到了各行各业的受害者——原来，我们都只是待割的韭菜。',
+          cond: (s) => s.attrs.luck <= 4,
+          tags: ['金融化','收割'],
+          effects: { materialCondition: -20, classConsciousness: 12, alienation: 8 }
+        },
+        { text: '你参与了社区自治组织。在协商与互助中，你看到了另一种社会关系的可能——不是基于交换，而是基于需要。',
+          cond: (s) => s.metrics.classConsciousness >= 50,
+          tags: ['自治','另类'],
+          effects: { alienation: -10, classConsciousness: 5 }
+        },
+        { text: '你的子女进入了大厂工作，996，加班到深夜。你心疼却无能为力——代际传递的不仅是血脉，还有阶级命运。',
+          tags: ['代际','再生产'],
+          effects: { classConsciousness: 5, alienation: 5 }
+        }
+      ]
+    }
+  },
+
+  bourdieu: {
+    name: '皮埃尔·布迪厄',
+    color: '#4a7c59',
+    metricsDef: [
+      { key: 'economicCapital', name: '经济资本', init: 30 },
+      { key: 'culturalCapital', name: '文化资本', init: 25 },
+      { key: 'socialCapital', name: '社会资本', init: 20 },
+      { key: 'symbolicCapital', name: '符号资本', init: 15 }
+    ],
+    events: {
+      early: [
+        { text: '你出生在一个{classDesc}家庭。你不知道的是，你此刻拥有的第一笔资本——不是金钱，而是惯习。你的口味、你的口音、你看世界的方式，都已经被家庭场域刻入身体。',
+          tags: ['惯习','出身'],
+          effects: { economicCapital: 0, culturalCapital: 5 }
+        },
+        { text: '家里书架上摆满了文学经典，但你从未见父母真正读过。后来你才明白——书架本身就是文化资本的一部分，至于读不读，那是另一回事。',
+          cond: (s) => s.attrs.cls >= 1,
+          tags: ['文化资本','展示'],
+          effects: { culturalCapital: 8, symbolicCapital: 3 }
+        },
+        { text: '过年走亲戚，你被带去各种饭局。大人们互相敬酒、交换名片。你不知道，这些"人情"就是社会资本的原始积累。',
+          tags: ['社会资本','关系'],
+          effects: { socialCapital: 8 }
+        },
+        { text: '你学钢琴。不是因为你有音乐天赋，而是因为——在那个圈子里，钢琴是"有教养"的标志。',
+          cond: (s) => s.attrs.cls >= 1,
+          tags: ['文化资本','区隔'],
+          effects: { culturalCapital: 10, economicCapital: -5 }
+        }
+      ],
+      school: [
+        { text: '你的普通话很标准——这在学校是一种看不见的优势。那个操方言的同学，永远不知道自己为什么被老师忽视。',
+          cond: (s) => s.attrs.cls >= 1,
+          tags: ['语言资本','隐蔽'],
+          effects: { culturalCapital: 8, symbolicCapital: 5 }
+        },
+        { text: '你的口音让同学笑话。你开始沉默。沉默是一种惯习的退却，也是自我保护。但你失去的，是课堂上的话语权。',
+          cond: (s) => s.attrs.cls === 0,
+          tags: ['语言资本','排斥'],
+          effects: { culturalCapital: -5, symbolicCapital: -5 }
+        },
+        { text: '你参加数学竞赛获奖了。你以为是天赋，但布迪厄会说——是你家庭提前为你购买的课外辅导，转化成了文化资本。',
+          cond: (s) => s.attrs.int >= 7,
+          tags: ['文化资本','转化'],
+          effects: { culturalCapital: 10, symbolicCapital: 8 }
+        },
+        { text: '你发现了一个秘密：交朋友也是有策略的。有些"友谊"是社会资本的投资——你们家需要他们家的关系，反之亦然。',
+          tags: ['社会资本','策略'],
+          effects: { socialCapital: 8 }
+        }
+      ],
+      youth: [
+        { text: '你考上了名牌大学。这一纸文凭，是体制认可的文化资本凭证——从此，你可以进入那些曾经不为你敞开的场域。',
+          cond: (s) => s.attrs.int >= 6,
+          tags: ['文凭','制度性文化资本'],
+          effects: { culturalCapital: 15, symbolicCapital: 10 }
+        },
+        { text: '大学里你学会了品红酒、聊艺术。这些看似无用的小技巧，在日后的上层场域中，将转化为不可估量的符号资本。',
+          cond: (s) => s.attrs.cls >= 1 && s.attrs.look >= 5,
+          tags: ['区隔','品味'],
+          effects: { culturalCapital: 8, symbolicCapital: 8 }
+        },
+        { text: '你进入了一家投行。面试时你谈吐得体、引用恰当——这些"自然"的表现，其实是你中产惯习的完美展演。',
+          cond: (s) => s.attrs.int >= 7 && s.attrs.cls >= 1,
+          tags: ['惯习','场域'],
+          effects: { economicCapital: 15, socialCapital: 8 }
+        },
+        { text: '你发现自己跟同事格格不入。他们聊高尔夫、聊留学经历——这些话题是门票，没有相应的文化资本，你根本进不了对话。',
+          cond: (s) => s.attrs.cls <= 1,
+          choice: {
+            title: '你如何应对场域中的文化区隔？',
+            options: [
+              { text: '硬着头皮学——融入是最好的策略', effects: { culturalCapital: 10, socialCapital: 8, symbolicCapital: 5 } },
+              { text: '我走我自己的路——何必迎合', effects: { symbolicCapital: -5, socialCapital: -3 } },
+              { text: '我用自己的方式重新定义游戏规则', effects: { symbolicCapital: 8, socialCapital: 5, culturalCapital: 3 } }
+            ]
+          }
+        }
+      ],
+      mid: [
+        { text: '你把经济资本转换成了文化资本——送孩子上国际学校。三代人才能完成一次阶级跃升，你是第二代。',
+          cond: (s) => s.metrics.economicCapital >= 50,
+          tags: ['再生产','代际'],
+          effects: { economicCapital: -15, culturalCapital: 10, symbolicCapital: 5 }
+        },
+        { text: '你在业界的地位越来越高——这就是符号资本。你不需要解释自己，你的名字本身就是信用。',
+          cond: (s) => s.metrics.symbolicCapital >= 40,
+          tags: ['符号资本','声望'],
+          effects: { symbolicCapital: 10, socialCapital: 8, economicCapital: 8 }
+        },
+        { text: '一次社交晚宴上，你说了一个不恰当的笑话。笑声是冷的——你感到了场域边界的坚硬。品味不是知识，是刻在身体里的。',
+          cond: (s) => s.metrics.culturalCapital <= 40,
+          tags: ['惯习','失误'],
+          effects: { symbolicCapital: -8, socialCapital: -5 }
+        },
+        { text: '你开始写公众号，输出专业观点。这不是虚荣——这是一种资本转换策略：将文化资本转化为符号资本。',
+          cond: (s) => s.metrics.culturalCapital >= 40,
+          tags: ['资本转换','策略'],
+          effects: { culturalCapital: -3, symbolicCapital: 12, socialCapital: 5 }
+        }
+      ],
+      late: [
+        { text: '你把毕生收藏的名画捐给了美术馆。经济资本消失了，但符号资本永远留在你的名字旁。布迪厄会说：这是终极的资本转换。',
+          cond: (s) => s.metrics.economicCapital >= 50,
+          tags: ['资本转换','遗产'],
+          effects: { economicCapital: -20, symbolicCapital: 15 }
+        },
+        { text: '退休后的社交圈急剧萎缩——原来大部分"朋友"都只是场域中的临时盟友。社会资本的本质，是场域依赖的。',
+          tags: ['社会资本','消退'],
+          effects: { socialCapital: -15 }
+        },
+        { text: '你的孩子继承了你的惯习。他们不自觉地复制了你的品味、你的社交方式、你的阶层位置。再生产，无声地完成了。',
+          tags: ['再生产','惯习'],
+          effects: { symbolicCapital: 5 }
+        },
+        { text: '回顾一生，你发现：那些看似自由的选择——读什么书、交什么朋友、做什么工作——不过是惯习在替你做决定。',
+          tags: ['反思','惯习'],
+          effects: { symbolicCapital: 5 }
+        }
+      ]
+    }
+  },
+
+  goffman: {
+    name: '欧文·戈夫曼',
+    color: '#7b5ea7',
+    metricsDef: [
+      { key: 'face', name: '社会面子', init: 40 },
+      { key: 'stigma', name: '污名压力', init: 10 },
+      { key: 'roles', name: '角色库', init: 3 }
+    ],
+    events: {
+      early: [
+        { text: '你出生了。一个婴儿——纯洁的、未被定义的角色等待被分配。你的性别、你的名字、你的家族——都是第一层面具。',
+          tags: ['角色','出生'],
+          effects: { face: 5, roles: 1 }
+        },
+        { text: '在亲戚聚会上，你被推出来表演背唐诗。"来，给大家背一个！"——你第一次体会到，人可以同时是表演者和道具。',
+          tags: ['表演','前台'],
+          effects: { face: 8, stigma: 3 }
+        },
+        { text: '你打碎了邻居的花瓶。母亲让你道歉，教你"该说什么"。这不是教育诚实——这是在教你印象管理。',
+          tags: ['印象管理','社会化'],
+          effects: { face: 5 }
+        }
+      ],
+      school: [
+        { text: '开学第一天，你仔细挑选了衣服。你不知道这叫"印象管理"，但你已经在做了——在前台呈现最好的自己。',
+          tags: ['前台','印象管理'],
+          effects: { face: 5 }
+        },
+        { text: '你脸上有一块胎记。同学偶尔多看一眼。你学会了用头发遮住它——这是一种污名管理技术。',
+          cond: (s) => s.attrs.look <= 4,
+          tags: ['污名','遮掩'],
+          effects: { stigma: 10, face: -5 }
+        },
+        { text: '你在班上讲了一个笑话，全场哄笑。那一刻你感到一种奇异的权力——控制他人的印象，就是控制社会现实。',
+          cond: (s) => s.attrs.look >= 5,
+          tags: ['表演','权力'],
+          effects: { face: 10, roles: 1 }
+        },
+        { text: '考试作弊被发现了。你的"好学生"面具碎了一角——但真正让你痛苦的，不是道德，而是面子维护的失败。',
+          cond: (s) => s.attrs.luck <= 4,
+          tags: ['面子','崩塌'],
+          effects: { face: -15, stigma: 8 }
+        }
+      ],
+      youth: [
+        { text: '你学会了在宿舍是一种样子，在教室是另一种，在面试时又是一种。戈夫曼会说：你拥有了一个丰富的角色库，但哪个才是"真的"你？',
+          tags: ['角色','多重自我'],
+          effects: { roles: 2, face: 5 }
+        },
+        { text: '你谈了一场恋爱。约会时的精心打扮、对话中的自我呈现——恋爱不过是最精致的互动仪式之一。',
+          tags: ['互动仪式','恋爱'],
+          effects: { face: 8, stigma: -5 }
+        },
+        { text: '你在朋友圈展示精心修饰的生活。没人看到后台——凌乱的房间、泡面碗和焦虑的深夜。前台与后台，判若两人。',
+          tags: ['前台','后台','社交媒体'],
+          effects: { face: 8, stigma: 5 }
+        },
+        { text: '你被诊断出一种慢性病。你知道不该感到羞耻——但"知道"和"感受"是两回事。污名不在疾病里，在他人的目光中。',
+          cond: (s) => s.attrs.health <= 4,
+          tags: ['污名','疾病'],
+          effects: { stigma: 15, face: -8 }
+        },
+        { text: '你的出柜/非主流选择被亲戚知道了。饭桌上的沉默比言语更重——污名的本质，是"被默认的常态"对差异的无声审判。',
+          cond: (s) => s.attrs.luck <= 5,
+          choice: {
+            title: '面对这种污名情境，你的策略是？',
+            options: [
+              { text: '回避——减少与那些人的接触', effects: { stigma: 5, face: 5, roles: -1 } },
+              { text: '直接面对——我来定义我自己', effects: { face: -5, stigma: -8, roles: 1 } },
+              { text: '策略性出柜——只对安全的人坦白', effects: { stigma: 3, face: 3 } }
+            ]
+          }
+        }
+      ],
+      mid: [
+        { text: '职场酒局上，你笑着附和一个不好笑的笑话。你知道这是虚伪，但戈夫曼会纠正你：这叫"互动秩序的维护"。',
+          tags: ['互动秩序','表演'],
+          effects: { face: 5, stigma: 3 }
+        },
+        { text: '你在公司年会上表演节目，博得满堂喝彩。你发现自己越来越擅长在前台控场——但这种能力，也让你离"真实的自己"越来越远。',
+          tags: ['前台','疏离'],
+          effects: { face: 10, roles: 1, stigma: 5 }
+        },
+        { text: '你终于崩溃了一次——在全公司面前失声痛哭。后台的裂缝暴露在前台，你感到前所未有的羞耻。',
+          cond: (s) => s.metrics.stigma >= 40,
+          tags: ['前台崩溃','面子'],
+          effects: { face: -20, stigma: 10 }
+        },
+        { text: '你学会了"角色距离"——在履行职责的同时，保持一丝讽刺的距离。这不是不敬业，而是保护自我的方式。',
+          cond: (s) => s.metrics.roles >= 5,
+          tags: ['角色距离','保护'],
+          effects: { stigma: -5, face: 5 }
+        },
+        { text: '你开始写作。在文字中，你终于不用管理任何人印象——这是你唯一纯粹的后台。但一旦出版，它就又变成了前台。',
+          tags: ['前台','后台','写作'],
+          effects: { face: 8, stigma: -5 }
+        }
+      ],
+      late: [
+        { text: '退休了。你失去的不仅是工作，更是一整套社会角色。你曾经是某某经理、某某老师——现在你是谁？角色剥离的痛苦，比想象中更深。',
+          tags: ['角色丧失','身份'],
+          effects: { roles: -2, face: -10 }
+        },
+        { text: '你住进了养老院。戈夫曼笔下的全控机构——统一的作息、有限的隐私、被剥夺的自我呈现空间。你学会了在缝隙中保留尊严。',
+          cond: (s) => s.attrs.health <= 4,
+          tags: ['全控机构','收容'],
+          effects: { face: -10, stigma: 8, roles: -1 }
+        },
+        { text: '你终于不用再演了。没有前台需要维护，没有后台需要隐藏。当你不再在意面子的时候——也许是第一次，你真正拥有了自我。',
+          cond: (s) => s.metrics.face <= 30,
+          tags: ['解脱','真实'],
+          effects: { stigma: -15, face: 5 }
+        },
+        { text: '回首一生，你想起戈夫曼的话：面具不是你的敌人——面具就是你。社会生活本身，就是一场持续的表演。',
+          tags: ['反思','面具'],
+          effects: { face: 5 }
+        }
+      ]
+    }
+  },
+
+  parsons: {
+    name: '塔尔科特·帕森斯',
+    color: '#c49a3c',
+    metricsDef: [
+      { key: 'integration', name: '系统整合', init: 50 },
+      { key: 'conformity', name: '角色符合', init: 50 },
+      { key: 'internalization', name: '价值内化', init: 40 }
+    ],
+    events: {
+      early: [
+        { text: '你出生了。社会给你分配了第一组角色期望——性别角色、家庭角色。帕森斯说，这是社会化的起点：将社会规范植入个体。',
+          tags: ['社会化','角色分配'],
+          effects: { integration: 5, conformity: 5, internalization: 5 }
+        },
+        { text: '你被送进幼儿园。这是次级社会化机构的入口——家庭教会你基本规范，而学校将教会你角色期待。',
+          tags: ['社会化','机构'],
+          effects: { integration: 5, conformity: 5 }
+        },
+        { text: '你学会了排队等候、分享玩具。看似微不足道——但帕森斯会说，这是价值内化的第一步：将集体规范置于个人欲望之上。',
+          tags: ['规范','内化'],
+          effects: { internalization: 8, conformity: 5 }
+        }
+      ],
+      school: [
+        { text: '学校像一个精密的齿轮系统——校长、教师、学生、家长各司其职。你被分配到"学生"这个角色，你的功能是：学习、遵守、考核。',
+          tags: ['AGIL','功能'],
+          effects: { integration: 5, conformity: 8 }
+        },
+        { text: '你被选为班长。这个"领导角色"让你第一次体验到：角色期待可以是一种约束，也可以是一种动力。',
+          cond: (s) => s.attrs.int >= 6,
+          tags: ['角色','期待'],
+          effects: { conformity: 5, integration: 8 }
+        },
+        { text: '你开始逃课。在帕森斯的框架里，这是"越轨"——但越轨不是个体问题，是系统未能成功整合的表现。',
+          cond: (s) => s.attrs.luck <= 4,
+          tags: ['越轨','失范'],
+          effects: { conformity: -10, integration: -8, internalization: -5 }
+        },
+        { text: '升旗仪式上你肃立注目。你不知道为什么——但"不知道为什么却照做"，正是价值内化最完美的形态。',
+          tags: ['仪式','内化'],
+          effects: { internalization: 10, integration: 5 }
+        }
+      ],
+      youth: [
+        { text: '高考——社会分配角色的核心机制。通过它，系统将你归入不同的功能位置。你以为自己在选择，但帕森斯会说：是系统在选择你。',
+          tags: ['角色分配','选拔'],
+          effects: { integration: 5, conformity: 5 }
+        },
+        { text: '大学里你开始质疑社会规范。帕森斯会说这是"社会化的波动期"——但系统有足够的弹性来吸收这种偏离。',
+          cond: (s) => s.attrs.int >= 6,
+          tags: ['质疑','偏离'],
+          effects: { conformity: -5, internalization: -5 }
+        },
+        { text: '你找到了工作。正式进入职业角色系统——你的功能是执行任务、遵守规章、维持组织运转。系统需要你，你需要系统。',
+          tags: ['角色','功能'],
+          effects: { integration: 8, conformity: 8, internalization: 5 }
+        },
+        { text: '你结婚生子——完成了一项关键的制度性功能。家庭是社会系统的基础单元，而你在其中扮演着稳定器的角色。',
+          cond: (s) => s.attrs.look >= 4,
+          choice: {
+            title: '面对婚姻这个制度性角色，你的选择是？',
+            options: [
+              { text: '按照社会期待结婚生子', effects: { conformity: 10, integration: 8, internalization: 5 } },
+              { text: '我选择不婚或丁克', effects: { conformity: -10, integration: -5, internalization: -3 } },
+              { text: '结婚，但以自己的方式定义家庭', effects: { conformity: 3, integration: 5, internalization: 5 } }
+            ]
+          }
+        }
+      ],
+      mid: [
+        { text: '你是单位里的"骨干"。这意味着：系统运转依赖你，你也被绑定在系统上。帕森斯管这叫"功能不可或缺性"。',
+          cond: (s) => s.metrics.conformity >= 50,
+          tags: ['功能','依赖'],
+          effects: { integration: 10, conformity: 5 }
+        },
+        { text: '你参与了一次违规操作。在帕森斯看来，这是"紧张"——文化目标与制度手段之间的裂隙。你的手段偏离了，但目标还是被认可的。',
+          cond: (s) => s.metrics.conformity <= 40,
+          tags: ['紧张','越轨'],
+          effects: { conformity: -8, integration: -5 }
+        },
+        { text: '你遵守一切规则：按时交税、礼貌待人、服从管理。你是一个"良性"的社会成员——或者用帕森斯的话说，系统维持者。',
+          cond: (s) => s.metrics.conformity >= 60,
+          tags: ['均衡','维持'],
+          effects: { integration: 5, conformity: 5, internalization: 5 }
+        },
+        { text: '你开始对"安分守己"产生怀疑。这种不安不是你个人的——帕森斯会说，当系统无法满足个体的功能需求时，紧张就会在个体身上显现。',
+          cond: (s) => s.metrics.internalization <= 40,
+          tags: ['紧张','怀疑'],
+          effects: { internalization: -5, conformity: -5 }
+        }
+      ],
+      late: [
+        { text: '退休仪式上，领导表彰你"兢兢业业"。你微笑接受——这是角色完成的最高认可。系统感谢你，然后让你退出。',
+          tags: ['角色退出','认可'],
+          effects: { integration: 5, conformity: 5 }
+        },
+        { text: '你发现退休后的社会对你的期待变模糊了——没有明确角色，没有功能位置。帕森斯理论在这里露出一个缺口：不是每个人都需要"功能"来定义自己。',
+          tags: ['角色真空','反思'],
+          effects: { conformity: -8, integration: -5 }
+        },
+        { text: '你开始做志愿者。帕森斯会满意——即使退出职业系统，你仍在为社会的整合做贡献。但你知道，你做志愿者不是为了系统，是为了自己。',
+          cond: (s) => s.metrics.integration >= 40,
+          tags: ['贡献','自主'],
+          effects: { integration: 8, internalization: 5 }
+        },
+        { text: '回顾一生，你意识到帕森斯遗漏了一件事：人不仅是角色执行者，还是有欲望、有矛盾、有裂缝的存在。系统可以描述结构，但无法解释你为什么在深夜哭泣。',
+          tags: ['反思','超越'],
+          effects: { internalization: 5 }
+        }
+      ]
+    }
+  },
+
+  foucault: {
+    name: '米歇尔·福柯',
+    color: '#5a8a9a',
+    metricsDef: [
+      { key: 'discipline', name: '规训程度', init: 30 },
+      { key: 'resistance', name: '抵抗意识', init: 15 },
+      { key: 'subjectivation', name: '主体化', init: 30 }
+    ],
+    events: {
+      early: [
+        { text: '你出生了。从这一刻起，你的身体开始被编入档案——出生证、户口本、疫苗记录。你就是福柯说的"可命名、可记录、可分类的个体"。',
+          tags: ['分类','档案'],
+          effects: { discipline: 8, subjectivation: 5 }
+        },
+        { text: '幼儿园的作息表：8点入园，9点做操，10点加餐……你以为这是"正常"的时间安排，但福柯会说：这是规训的第一课——对身体的定时管理。',
+          tags: ['规训','时间表'],
+          effects: { discipline: 10, subjectivation: 5 }
+        },
+        { text: '你因为不守规矩被罚站了。罚站不仅仅是惩罚——它是一种"规训技术"，让你的身体学会服从特定空间中的特定姿态。',
+          tags: ['规训','惩罚'],
+          effects: { discipline: 8, resistance: 3 }
+        }
+      ],
+      school: [
+        { text: '教室的座位排成行列，你被分配了一个编号。这种空间组织不是偶然的——它让每一个身体都可见、可监督、可评估。',
+          tags: ['全景敞视','空间'],
+          effects: { discipline: 10, subjectivation: 5 }
+        },
+        { text: '考试。你以为这是在测试知识——但福柯会说，考试的真正功能是：让每个人成为可被比较、可被排序、可被归类的"案例"。',
+          tags: ['考试','分类'],
+          effects: { discipline: 8, subjectivation: 8 }
+        },
+        { text: '你在课间偷看了禁书。老师没有发现。但你注意到了一件奇怪的事——即使没有监视者，你也在自我审查。内化的凝视，比任何摄像头都有效。',
+          cond: (s) => s.attrs.int >= 5,
+          tags: ['自我审查','内化'],
+          effects: { discipline: 5, resistance: 8 }
+        },
+        { text: '学校安装了监控摄像头。同学们议论纷纷——但一周后，大家就习惯了。习惯，是权力最精妙的杰作。',
+          tags: ['监控','习惯'],
+          effects: { discipline: 8 }
+        }
+      ],
+      youth: [
+        { text: '你做了一个心理测试。它告诉你，你是"内向型人格"。你没有质疑——但福柯会问：是谁定义了"正常"？分类本身，就是权力的运作。',
+          tags: ['正常化','分类'],
+          effects: { discipline: 5, subjectivation: 10 }
+        },
+        { text: '你开始在社交媒体上表达自己——发帖、点赞、评论。但你在写每一条之前都会想："别人会怎么看？"坦白的冲动，本身就是权力诱发的。',
+          tags: ['坦白','自我技术'],
+          effects: { discipline: 8, subjectivation: 8 }
+        },
+        { text: '你进入职场。打卡、KPI、360度评估——你以为这是管理手段，但福柯会说：这是规训技术的全面升级。你的身体、时间、注意力都被精确管理。',
+          tags: ['规训','职场'],
+          effects: { discipline: 12, subjectivation: 5 }
+        },
+        { text: '你接触到一本"禁书"——或者说不被主流推荐的书。你开始怀疑：知识的边界是谁划定的？被排斥的声音，比被收录的更值得关注。',
+          cond: (s) => s.attrs.int >= 6,
+          choice: {
+            title: '面对知识的权力边界，你如何回应？',
+            options: [
+              { text: '深入边缘——我要看看被排除的是什么', effects: { resistance: 15, discipline: -5, subjectivation: 8 } },
+              { text: '谨慎前行——有些东西被排除是有原因的', effects: { discipline: 5, resistance: 3 } },
+              { text: '我自创一种不被分类的知识', effects: { resistance: 10, subjectivation: 10, discipline: -3 } }
+            ]
+          }
+        }
+      ],
+      mid: [
+        { text: '你的体检报告异常。医生用数字定义了你的身体——血压、血糖、BMI。你知道这些数字是"关爱"，但你也被它们治理了。生命政治，从身体开始。',
+          tags: ['生命政治','身体'],
+          effects: { discipline: 8, subjectivation: 5 }
+        },
+        { text: '公司推行"企业文化"。团建、分享会、价值观宣导——你以为这是自由的表达，但福柯会说：这是通过自我技术实现的自我治理。',
+          tags: ['自我治理','企业文化'],
+          effects: { discipline: 10, subjectivation: 8, resistance: -3 }
+        },
+        { text: '你开始练习冥想。原本是追求内心平静——但福柯会追问：谁告诉你"内心"需要被管理？自我技术从来不是中立的。',
+          cond: (s) => s.metrics.discipline >= 50,
+          tags: ['自我技术','反思'],
+          effects: { discipline: -5, resistance: 8, subjectivation: 5 }
+        },
+        { text: '你在社交平台上发了一段反思性文字——关于体制、关于规训。帖子被删了。你学到了：抵抗本身也会被收编——删除，也是一种对话。',
+          cond: (s) => s.metrics.resistance >= 40,
+          tags: ['抵抗','收编'],
+          effects: { resistance: 10, discipline: 5 }
+        },
+        { text: '你做了一个"出格"的决定——辞职、独居、自学。这不是英雄主义——这是在规训的缝隙中，为"另一种主体性"找到空间。',
+          cond: (s) => s.metrics.resistance >= 30,
+          tags: ['逃逸线','另类'],
+          effects: { resistance: 10, discipline: -8, subjectivation: 8 }
+        }
+      ],
+      late: [
+        { text: '你的病历越来越厚。每一次就诊都是一次坦白——你对医生毫无保留，因为你是"患者"。但谁定义了"患者"这个身份？',
+          tags: ['坦白','医疗化'],
+          effects: { discipline: 5, subjectivation: 5 }
+        },
+        { text: '你参加了社区读书会，读福柯。当你向邻居解释"规训"的概念时，他们困惑地看着你。但你注意到了：困惑本身，就是权力效果的证明。',
+          cond: (s) => s.metrics.resistance >= 40,
+          tags: ['知识','权力'],
+          effects: { resistance: 5, subjectivation: 5 }
+        },
+        { text: '你拒绝了一种医疗干预。医生说"这是为你好"——但你听到的是福柯的回声："为你好"是生命政治最温柔也最暴力的修辞。',
+          cond: (s) => s.metrics.resistance >= 50,
+          tags: ['生命政治','拒绝'],
+          effects: { resistance: 10, discipline: -5 }
+        },
+        { text: '在生命的黄昏，你终于理解了福柯的关键洞见：权力不是你头顶的压迫，而是你身体里的纹理。你无法逃脱它，但你可以——在某个瞬间——让它颤动。',
+          tags: ['反思','权力'],
+          effects: { subjectivation: 10, resistance: 5 }
+        }
+      ]
+    }
+  },
+
+  giddens: {
+    name: '安东尼·吉登斯',
+    color: '#b85c38',
+    metricsDef: [
+      { key: 'agency', name: '能动性', init: 40 },
+      { key: 'structure', name: '结构约束', init: 40 },
+      { key: 'reflexivity', name: '反思性', init: 25 }
+    ],
+    events: {
+      early: [
+        { text: '你出生了。吉登斯不会说"你被结构决定了"——他会说：你出生在一个已有的结构中，但你的每一次行动都在（哪怕是微弱地）再生产或改变这个结构。',
+          tags: ['结构二重性','出生'],
+          effects: { structure: 5, agency: 3 }
+        },
+        { text: '你被送进学校。这是一个结构——但你如何回应它，是你的能动性。哪怕是三岁小孩的"我不想上学"，也已经是结构与行动的交汇。',
+          tags: ['二重性','行动'],
+          effects: { structure: 5, agency: 5 }
+        },
+        { text: '你选择不穿妈妈准备的衣服，自己挑了一件。吉登斯会说：这是能动性的最初展演——在日常惯例的缝隙中，你做出了一个"选择"。',
+          tags: ['能动性','日常'],
+          effects: { agency: 5, reflexivity: 3 }
+        }
+      ],
+      school: [
+        { text: '学校是结构的缩影：课程、纪律、考试制度。但你发现，同样的制度下，每个同学的应对方式都不同——结构的约束是真实的，但不是决定性的。',
+          tags: ['结构','约束'],
+          effects: { structure: 8, agency: 5 }
+        },
+        { text: '你组织了一个读书小组。这个行动不是凭空而来的——你利用了学校提供的空间、同学关系网（结构），但你做了前所未有的组合（能动性）。',
+          cond: (s) => s.attrs.int >= 5,
+          tags: ['二重性','创新'],
+          effects: { agency: 8, structure: 3, reflexivity: 5 }
+        },
+        { text: '你在班上被孤立了。这不仅是"同学不好"——是整个社交结构（座位安排、分组制度、评价体系）在将你推向边缘。',
+          cond: (s) => s.attrs.luck <= 4,
+          tags: ['结构','排斥'],
+          effects: { structure: 8, agency: -5 }
+        },
+        { text: '你开始记日记。吉登斯会说：这是反思性的训练——你把自己当作对象来审视。而反思性，是现代性最核心的特征。',
+          tags: ['反思性','现代性'],
+          effects: { reflexivity: 10, agency: 5 }
+        }
+      ],
+      youth: [
+        { text: '你面临人生选择：考研还是工作？这看似自由选择，但吉登斯提醒你：选项的范围、判断的标准，都是被结构预设的。不过，选择本身——是你的能动性。',
+          tags: ['选择','二重性'],
+          effects: { agency: 8, structure: 5, reflexivity: 5 }
+        },
+        { text: '你选择了考研。这不是简单的"向上走"——这是你在结构提供的路径中，用行动改变了自身的位置。结构给了路线，你做了选择。',
+          cond: (s) => s.attrs.int >= 6,
+          tags: ['能动性','教育'],
+          effects: { agency: 8, reflexivity: 5, structure: 3 }
+        },
+        { text: '你进入了一个"非传统"的职业——自由职业者、创作者。吉登斯会说：这是反思性现代化的典型——你不再只是接受预设的人生轨道，而是在持续地反思和建构。',
+          cond: (s) => s.attrs.luck >= 6,
+          tags: ['反思性现代','另类'],
+          effects: { agency: 10, reflexivity: 8, structure: -3 }
+        },
+        { text: '你在职场中感受到了一种深层的不安——吉登斯称之为"本体性安全"的动摇。当既有的惯例无法再为你提供稳定感时，你必须主动建构意义。',
+          cond: (s) => s.metrics.structure >= 50,
+          choice: {
+            title: '本体性安全动摇时，你如何重建？',
+            options: [
+              { text: '回归传统——重新拥抱确定的结构', effects: { structure: 10, agency: -5, reflexivity: -3 } },
+              { text: '拥抱不确定——在流动中找到自由', effects: { agency: 10, reflexivity: 8, structure: -5 } },
+              { text: '自我治疗——心理咨询帮你理解焦虑的结构根源', effects: { reflexivity: 10, agency: 5 } }
+            ]
+          }
+        }
+      ],
+      mid: [
+        { text: '你发起了公司内部的一次制度改革。它成功了——你的行动改变了结构。这正是吉登斯的核心命题：结构既是行动的条件，也是行动的结果。',
+          cond: (s) => s.metrics.agency >= 50,
+          tags: ['结构化','改变'],
+          effects: { agency: 8, structure: 5, reflexivity: 5 }
+        },
+        { text: '你关注环保、性别平等、社会公正——吉登斯称之为"生活政治"。这不是关于资源分配的传统政治，而是关于"如何生活"的反思性政治。',
+          cond: (s) => s.metrics.reflexivity >= 40,
+          tags: ['生活政治','反思'],
+          effects: { reflexivity: 8, agency: 5 }
+        },
+        { text: '全球化让你的工作受到远程竞争的冲击。你深刻地体会到：结构的力量可以跨越国界，而个人的能动性却受限于本地。但这不是终点——',
+          tags: ['全球化','结构'],
+          effects: { structure: 10, agency: 3, reflexivity: 5 }
+        },
+        { text: '你在亲密关系中学会了协商与沟通。吉登斯会说：这是"纯粹关系"——不是因为义务而维系，而是因为双方持续的反思性承诺。',
+          tags: ['纯粹关系','亲密'],
+          effects: { reflexivity: 8, agency: 5 }
+        }
+      ],
+      late: [
+        { text: '退休后你开始做自媒体，分享人生经验。这是吉登斯所说的"晚期现代性"的典型：即使退出传统结构，你仍在通过反思性行动建构自我。',
+          cond: (s) => s.metrics.reflexivity >= 40,
+          tags: ['反思性','晚期现代'],
+          effects: { agency: 8, reflexivity: 5 }
+        },
+        { text: '你尝试了一种全新的生活方式——社区共享、互助养老。这不仅是个人选择，而是通过行动创造了一种微型结构。结构化，从个体开始。',
+          tags: ['结构化','创新'],
+          effects: { agency: 10, structure: 5, reflexivity: 5 }
+        },
+        { text: '你感到一种前所未有的自由——但同时也感到失落。吉登斯会说：这就是现代性的两难——解放与异化、自由与孤独，总是同时出现。',
+          tags: ['现代性','两难'],
+          effects: { agency: 5, reflexivity: 8 }
+        },
+        { text: '在生命的尽头，你理解了吉登斯的终极洞见：结构与能动性不是对立的——你的每一次行动都在既有的结构中发生，同时也在微调着结构本身。你从未只是被决定，也从未完全自由。',
+          tags: ['二重性','终极'],
+          effects: { reflexivity: 10, agency: 5 }
+        }
+      ]
+    }
+  }
+};
+
+// ===== 工具函数 =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let selectedTheory = null;
+function selectTheory(key) {
+  selectedTheory = key;
+  document.querySelectorAll('.theory-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.theory-card[data-theory="${key}"]`).classList.add('selected');
+  document.getElementById('btn-to-char').disabled = false;
+}
+
+// 滑块实时更新
+document.querySelectorAll('input[type="range"]').forEach(input => {
+  input.addEventListener('input', () => {
+    document.getElementById('val-' + input.id.split('-')[1]).textContent = input.value;
+  });
+});
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function clamp(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, v)); }
+
+// ===== 开始模拟 =====
+function startSimulation() {
+  const T = THEORIES[selectedTheory];
+  state.theory = selectedTheory;
+  state.age = 0;
+  state.alive = true;
+  state.events = [];
+  state.log = [];
+  state.pendingChoice = null;
+  state.usedEventIds = {};
+
+  const cls = parseInt(document.getElementById('attr-class').value);
+  state.attrs = {
+    cls,
+    int: parseInt(document.getElementById('attr-int').value),
+    look: parseInt(document.getElementById('attr-look').value),
+    health: parseInt(document.getElementById('attr-health').value),
+    luck: parseInt(document.getElementById('attr-luck').value)
+  };
+
+  state.metrics = {};
+  T.metricsDef.forEach(m => {
+    let init = m.init;
+    if (m.key.includes('economic') || m.key.includes('material')) init += cls * 15 - 10;
+    if (m.key.includes('cultural')) init += cls * 10;
+    if (m.key.includes('social')) init += cls * 5;
+    state.metrics[m.key] = clamp(init + rand(-5, 5));
+  });
+
+  // 确定死亡年龄
+  state.deathAge = Math.max(50, Math.min(95,
+    55 + state.attrs.health * 3 + state.attrs.luck * 1.5 + rand(-5, 10)
+  ));
+
+  // 设置UI
+  document.getElementById('sim-theory').textContent = T.name + ' · 透镜';
+  document.getElementById('sim-theory').style.color = T.color;
+  document.getElementById('event-log').innerHTML = '';
+  document.getElementById('btn-next').classList.remove('hidden');
+  document.getElementById('btn-summary').classList.add('hidden');
+
+  showScreen('simulation');
+  updateMetricsUI();
+  nextYear();
+}
+
+function getStage(age) {
+  if (age <= 6) return 'early';
+  if (age <= 12) return 'school';
+  if (age <= 22) return 'youth';
+  if (age <= 50) return 'mid';
+  return 'late';
+}
+
+function getClassDesc(cls) {
+  return ['城乡流动工人', '城市普通白领', '体制内/商业精英'][cls] || '';
+}
+
+function getFatherWork(cls) {
+  return [['在建筑工地上挥汗如雨', '在流水线上做计件工', '骑电动车穿梭送外卖'],
+          ['在写字楼里加班到深夜', '在国企做了一辈子职员', '开了一家小超市'],
+          ['在董事会上签下合同', '在医院做主任医师', '在政府大楼里审阅文件']][cls];
+}
+
+function getMotherWork(cls) {
+  return [['在菜市场凌晨进货', '在家照顾你和弟弟', '做钟点工补贴家用'],
+          ['在学校当老师', '做了一辈子会计', '在医院做护士'],
+          ['在慈善晚宴上筹款', '经营着自己的画廊', '是大学教授']][cls];
+}
+
+function fillTemplate(text, s) {
+  return text
+    .replace(/{classDesc}/g, getClassDesc(s.attrs.cls))
+    .replace(/{fatherWork}/g, pick(getFatherWork(s.attrs.cls)))
+    .replace(/{motherWork}/g, pick(getMotherWork(s.attrs.cls)));
+}
+
+// ===== 逐年推进 =====
+function nextYear() {
+  if (!state.alive) return;
+
+  const T = THEORIES[state.theory];
+  const stage = getStage(state.age);
+  const stageEvents = T.events[stage];
+
+  // 筛选符合条件的事件（排除已使用的）
+  const eligible = stageEvents.filter(e => !e.cond || e.cond(state))
+    .filter(e => {
+      const eid = e.text.substring(0, 30);
+      if (state.usedEventIds[eid]) return false;
+      return true;
+    });
+  if (eligible.length === 0) {
+    // 重置已用事件，允许重复
+    state.usedEventIds = {};
+    const reEligible = stageEvents.filter(e => !e.cond || e.cond(state));
+    if (reEligible.length === 0) {
+      advanceYear();
+      return;
+    }
+    const event = pick(reEligible);
+    const eventText = fillTemplate(event.text, state);
+    state.usedEventIds[event.text.substring(0, 30)] = true;
+    renderEvent(event, eventText, T);
+    return;
+  }
+
+  const event = pick(eligible);
+  const eventText = fillTemplate(event.text, state);
+  state.usedEventIds[event.text.substring(0, 30)] = true;
+  renderEvent(event, eventText, T);
+}
+
+function renderEvent(event, eventText, T) {
+  const stage = getStage(state.age);
+
+  // 应用效果
+  if (event.effects) {
+    Object.keys(event.effects).forEach(k => {
+      if (state.metrics[k] !== undefined) {
+        state.metrics[k] = clamp(state.metrics[k] + event.effects[k]);
+      }
+    });
+  }
+
+  // 记录事件
+  state.log.push({ age: state.age, text: eventText, tags: event.tags });
+
+  // 渲染事件卡片
+  const log = document.getElementById('event-log');
+  const card = document.createElement('div');
+  card.className = 'event-card';
+  card.style.borderLeftColor = T.color;
+  card.style.borderLeftWidth = '3px';
+  card.innerHTML = `
+    <div class="event-age">${state.age} 岁</div>
+    <div class="event-text">${eventText}</div>
+    ${event.effects ? '<div class="event-impact">' + formatEffects(event.effects, T) + '</div>' : ''}
+  `;
+
+  log.appendChild(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  // 如果有选择
+  if (event.choice) {
+    state.pendingChoice = event.choice;
+    const choiceBox = document.createElement('div');
+    choiceBox.className = 'choice-box';
+    choiceBox.innerHTML = `
+      <div class="choice-title">${event.choice.title}</div>
+      ${event.choice.options.map((opt, i) =>
+        `<button class="choice-btn" onclick="makeChoice(${i})">${opt.text}</button>`
+      ).join('')}
+    `;
+    card.appendChild(choiceBox);
+    document.getElementById('btn-next').disabled = true;
+  }
+
+  updateMetricsUI();
+  document.getElementById('sim-year').textContent = `${state.age} 岁`;
+
+  // 检查死亡
+  if (state.age >= state.deathAge) {
+    state.alive = false;
+    state.deathReason = generateDeathReason();
+    setTimeout(() => {
+      const deathCard = document.createElement('div');
+      deathCard.className = 'event-card';
+      deathCard.style.borderLeftColor = T.color;
+      deathCard.style.borderLeftWidth = '3px';
+      deathCard.innerHTML = `
+        <div class="event-age">${state.age} 岁 · 终</div>
+        <div class="event-text">${state.deathReason}</div>
+      `;
+      log.appendChild(deathCard);
+      document.getElementById('btn-next').classList.add('hidden');
+      document.getElementById('btn-summary').classList.remove('hidden');
+    }, 800);
+  }
+
+  if (!event.choice) {
+    advanceYear();
+  }
+}
+
+function makeChoice(index) {
+  const choice = state.pendingChoice;
+  if (!choice) return;
+  const opt = choice.options[index];
+
+  // 应用选择效果
+  if (opt.effects) {
+    Object.keys(opt.effects).forEach(k => {
+      if (state.metrics[k] !== undefined) {
+        state.metrics[k] = clamp(state.metrics[k] + opt.effects[k]);
+      }
+    });
+  }
+
+  state.log[state.log.length - 1].choice = opt.text;
+  state.pendingChoice = null;
+
+  // 移除选择框，显示选择结果
+  const log = document.getElementById('event-log');
+  const lastCard = log.lastElementChild;
+  const choiceBox = lastCard.querySelector('.choice-box');
+  if (choiceBox) {
+    choiceBox.innerHTML = `<div class="choice-title" style="color:${THEORIES[state.theory].color}">→ ${opt.text}</div>`;
+  }
+
+  document.getElementById('btn-next').disabled = false;
+  updateMetricsUI();
+  advanceYear();
+}
+
+function advanceYear() {
+  const stage = getStage(state.age);
+  // 不同阶段跳年速度不同
+  const step = (stage === 'early') ? rand(1, 3) :
+               (stage === 'school') ? rand(1, 2) :
+               rand(1, 3);
+  state.age += step;
+
+  // 随机微波动
+  const T = THEORIES[state.theory];
+  T.metricsDef.forEach(m => {
+    state.metrics[m.key] = clamp(state.metrics[m.key] + rand(-2, 2));
+  });
+}
+
+function formatEffects(effects, T) {
+  const names = {};
+  T.metricsDef.forEach(m => names[m.key] = m.name);
+  return Object.entries(effects)
+    .filter(([k]) => names[k])
+    .map(([k, v]) => `${names[k]} ${v > 0 ? '+' + v : v}`)
+    .join(' · ');
+}
+
+function updateMetricsUI() {
+  const T = THEORIES[state.theory];
+  const bar = document.getElementById('metrics-bar');
+  bar.innerHTML = T.metricsDef.map(m => {
+    const val = state.metrics[m.key] || 0;
+    const isCount = (m.key === 'roles'); // 角色库是计数型指标
+    if (isCount) {
+      return `
+        <div class="metric">
+          <div class="metric-name">${m.name}</div>
+          <div class="metric-val" style="color:${T.color};margin-top:4px;font-size:1.1rem;">${val}</div>
+        </div>
+      `;
+    }
+    return `
+      <div class="metric">
+        <div class="metric-name">${m.name}</div>
+        <div class="metric-bar-outer">
+          <div class="metric-bar-inner" style="width:${val}%;background:${T.color}"></div>
+        </div>
+        <div class="metric-val" style="color:${T.color}">${val}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function generateDeathReason() {
+  const T = THEORIES[state.theory];
+  const reasons = {
+    marx: [
+      '你在病床上闭上眼睛。一生中你与生产关系搏斗、在异化中挣扎——最终，你的身体也是资本可以消耗的资源。但你的意识，不会随着身体消亡。',
+      '你走了。棺材的价格是3800元——即使是死亡，也有阶级差异。但你的思想，也许是这个阶级留给世界最后的剩余价值。'
+    ],
+    bourdieu: [
+      '你的葬礼规格与你一生的符号资本相称。花圈的排列、挽联的措辞——即使死后，惯习仍在替你做最后的展演。',
+      '你走了。讣告上写满了头衔——那些你用一生转换得来的符号资本。但你知道，真正重要的那部分，永远无法被符号化。'
+    ],
+    goffman: [
+      '你走了。这是最后一次"退场"——没有谢幕，没有掌声。但你终于可以摘下面具了。也许，面具下的那张脸，才是你。',
+      '你的遗容经过精心整理——最后一次印象管理。讽刺的是，这是你一生中最完美的一次表演，而观众已经散场。'
+    ],
+    parsons: [
+      '你走了。系统短暂地振荡了一下——然后恢复了均衡。一个功能位空出，新的个体将被社会化填补。帕森斯会说：这就是系统的韧性。',
+      '你的一生是系统运转的一个节点。你被社会化、被分配角色、完成功能、退出。系统不需要记得你，但你曾在其中。'
+    ],
+    foucault: [
+      '你的死亡证明被归档——又一个可分类的案例。但你一生中那些逃逸的瞬间、那些抵抗的缝隙，不会被记录在案。',
+      '你走了。你的病历、档案、社交媒体痕迹仍存——数字化的规训比肉体更持久。但你曾让权力颤抖的那个瞬间，不会出现在任何档案中。'
+    ],
+    giddens: [
+      '你走了。你的一生不是被结构决定的，也不是完全自由的——它是在结构与能动性的持续对话中度过的。这种对话，在你离开后仍会继续。',
+      '你走了。你改变了结构——哪怕只是微小的偏移。而你的行动留下的痕迹，将成为下一代人行动的条件。结构化，从未停止。'
+    ]
+  };
+  return pick(reasons[state.theory] || ['你走了。']);
+}
+
+// ===== 总结 =====
+function showSummary() {
+  const T = THEORIES[state.theory];
+  showScreen('summary');
+
+  document.getElementById('summary-life').textContent =
+    `${T.name}透镜下 · ${state.age}岁 · ${getClassDesc(state.attrs.cls)}家庭出身`;
+
+  // 最终指标
+  const fm = document.getElementById('final-metrics');
+  fm.innerHTML = T.metricsDef.map(m => {
+    const val = state.metrics[m.key];
+    const isCount = (m.key === 'roles');
+    return `
+      <div class="final-metric">
+        <div class="num" style="color:${T.color}">${val}</div>
+        <div class="label">${m.name}${isCount ? ' (个)' : ''}</div>
+      </div>
+    `;
+  }).join('');
+
+  // 理论诊断
+  const diag = generateDiagnosis();
+  document.getElementById('diagnosis').innerHTML = `
+    <h3 style="color:${T.color}">理论诊断</h3>
+    ${diag.map(p => `<p>${p}</p>`).join('')}
+  `;
+
+  // 时间线
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = state.log.map(e =>
+    `<div class="timeline-item">
+      <span class="timeline-age">${e.age}岁</span>
+      <span class="timeline-event">${e.text.substring(0, 60)}${e.text.length > 60 ? '…' : ''}</span>
+    </div>`
+  ).join('');
+}
+
+function generateDiagnosis() {
+  const T = THEORIES[state.theory];
+  const m = state.metrics;
+  const a = state.attrs;
+  const diag = { marx: [], bourdieu: [], goffman: [], parsons: [], foucault: [], giddens: [] };
+
+  diag.marx = [
+    m.classConsciousness >= 60
+      ? '你的一生是一个阶级意识逐渐觉醒的过程。你从日常经验的迷雾中走出来，看见了生产关系的真实面貌——虽然这种清醒本身也伴随着痛苦。'
+      : '你的阶级意识始终处于朦胧状态——不是因为你不敏锐，而是因为意识形态的运作太过精妙。异化被包装成了"正常生活"，而你几乎从未质疑过这种"正常"。',
+    m.alienation >= 60
+      ? '异化如影随形地陪伴了你一生。你的劳动不属于你，你的需要不属于你，甚至你的思想也不属于你——但你在异化最深的地方，反而看见了裂缝。'
+      : '令人意外的是，你在马克思的透镜下并未完全沉入异化。也许是因为你在某些时刻找到了劳动的自主性，也许是因为你学会了将异化本身作为认识世界的方式。',
+    `最终，你的物质条件停留在${m.materialCondition}。在马克思的框架里，这不只是一个数字——它标记着你在生产关系中的位置，以及你可能改变什么的空间。`
+  ];
+
+  diag.bourdieu = [
+    m.economicCapital >= 60
+      ? '经济资本是你最厚实的底牌。但布迪厄提醒你：资本的真正力量不在于持有，而在于转换。你能否将经济资本转化为更持久的文化资本和符号资本？'
+      : '经济资本不是你的优势。但布迪厄会告诉你：资本转换有无数条路径——文化资本可以变现，社会资本可以撬动经济资源。关键是找到你的转换策略。',
+    m.culturalCapital >= 60
+      ? '文化资本是你最敏锐的武器——品味、知识、文凭、语言，这些都让你在各个场域中如鱼得水。但请记住：文化资本的隐蔽性恰恰是它最暴力的地方。'
+      : '文化资本是你需要补足的领域。在布迪厄的框架里，这不只是"缺知识"——而是你的惯习与主流场域的要求之间存在错位。这种错位，会在关键时刻暴露。',
+    m.symbolicCapital >= 60
+      ? '符号资本是你一生的勋章——被认可、被尊重、被信赖。但布迪厄会说：符号资本是最脆弱的，因为它完全依赖于他人的信念。一旦信念动摇，一切归零。'
+      : '符号资本始终不高——这意味着你很少获得"无需证明的认可"。在一个符号暴力无处不在的社会中，缺乏符号资本，就是持续地被定义而非自我定义。',
+    `你的社会资本为${m.socialCapital}。在布迪厄看来，社交网络的本质不是友谊，而是资源。你一生中积累的关系网——它是策略性的，还是真诚的？也许，在布迪厄的框架里，这个问题本身就没有意义。`
+  ];
+
+  diag.goffman = [
+    m.face >= 60
+      ? '你一生都在精心维护社会面子——前台表演几近完美，但后台的焦虑只有你自己知道。戈夫曼会说：面子不是虚荣，而是社会生活的必要条件。但当你无法卸妆时，它就是牢笼。'
+      : '你从未太在意面子——这可能意味着你更自由，也可能意味着你承受了更多"不懂规矩"的代价。在戈夫曼的框架里，拒绝表演本身就是一种表演。',
+    m.stigma >= 50
+      ? '污名像一根刺，扎在你一生的叙事中。你学会了各种管理策略——遮掩、回避、重新定义。但戈夫曼会追问：当你在"管理"污名时，你是否也在加固它？'
+      : '你的污名压力不高——也许你幸运地处于"正常"范畴之内。但戈夫曼会提醒你：对污名的免疫力不是永恒的。一次疾病、一次失业、一次身份转换，都可能让你从"正常"滑向"被标记"。',
+    `你一生积累了${m.roles}个角色。在戈夫曼的拟剧论中，丰富的角色库意味着更多的表演空间，但也意味着更深的身份碎片化——当幕布落下，哪个才是"真正的"你？`
+  ];
+
+  diag.parsons = [
+    m.integration >= 60
+      ? '你与系统的整合度很高——这意味着你被社会很好地接纳了，但也可能意味着你被过度吸纳了。帕森斯会说这是"功能正常的"，但默顿会问：这种整合，是否以压抑你为代价？'
+      : '你始终与系统保持着距离——也许是一种疏离，也许是一种清醒。在帕森斯的框架里，你是系统的"紧张点"：你的不整合，恰恰暴露了系统整合的不完美。',
+    m.conformity >= 60
+      ? '你是一个高度符合角色期待的人。在帕森斯看来，这是社会化的成功案例。但从批判的视角看——你的"符合"是出于认同，还是出于无意识？'
+      : '你的角色符合度偏低——你常常偏离社会期待。帕森斯会把这诊断为"社会化不充分"，但你也许会说：不是我没有学会规则，而是我选择了不同的游戏。',
+    `你的价值内化程度为${m.internalization}。帕森斯会说：这决定了你"自愿"遵守规范的程度。但请注意——"自愿"与"被规训至自愿"之间的界限，比想象中模糊得多。`
+  ];
+
+  diag.foucault = [
+    m.discipline >= 60
+      ? '规训深入你的骨髓——你甚至不再需要外在的监视者，因为你已经成为了自己的监视者。福柯会说：这是权力最完美的形态，比任何暴政都更高效。'
+      : '你的规训程度相对较低——这意味着你保留了更多"不可治理"的部分。在福柯看来，这是珍贵的，也是危险的：权力对不可治理者的回应，往往是更猛烈的规训。',
+    m.resistance >= 50
+      ? '你的抵抗意识是你最珍贵的遗产——不是因为抵抗一定成功，而是因为抵抗本身证明了：权力从未完全覆盖你。在福柯的框架里，哪里有权力，哪里就有抵抗。'
+      : '你的抵抗意识不高——也许是因为规训太过成功，也许是因为你没有意识到自己在抵抗什么。福柯会说：最大的权力效果，就是让人忘记权力曾经运作过。',
+    `你的主体化程度为${m.subjectivation}。在福柯的晚期思想中，主体化是双面的——你既被权力塑造为主体，也在抵抗中创造新的主体性。你不是权力的产物，也不是权力的对立面——你是权力与抵抗之间的那个裂缝。`
+  ];
+
+  diag.giddens = [
+    m.agency >= 60
+      ? '你展现了强大的能动性——在结构的缝隙中开辟道路，在既定的轨道上做出偏离。但吉登斯会提醒你：能动性不是"无视结构"，而是"在结构中行动并改变结构"。'
+      : '你的能动性受到限制——但吉登斯会纠正"限制"这个词：结构不是墙，而是你行动的条件和媒介。问题不是"你能不能行动"，而是"你如何在既定条件下找到行动的可能性"。',
+    m.structure >= 60
+      ? '结构的约束在你的一生中格外显著——阶层、性别、制度、时代，这些结构性力量深刻地形塑了你的轨迹。但吉登斯的核心命题是：结构恰恰是通过你的行动而再生产的。你的顺从，也在维持它。'
+      : '你似乎活在一个结构约束不太强的世界里——但吉登斯会说：也许不是约束弱，而是你已经把结构内化为"常识"。看不见的约束，往往比看得见的更有力。',
+    `你的反思性为${m.reflexivity}。吉登斯会说，这是现代性最重要的能力——不是盲目接受，也不是全盘否定，而是持续地审视自己、审视世界、审视两者之间的关系。反思性不是一个分数，而是一种持续追问的姿态。`
+  ];
+
+  return diag[state.theory] || ['你的一生，是多种力量交织的结果。'];
+}
+
+function restart() {
+  selectedTheory = null;
+  document.querySelectorAll('.theory-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('btn-to-char').disabled = true;
+  showScreen('theory-select');
+}
+</script>
+</body>
+</html>
